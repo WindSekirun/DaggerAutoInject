@@ -10,3 +10,32 @@ dependencies {
     implementation "com.google.dagger:dagger-android:$dagger_version"
     implementation "com.google.dagger:dagger-android-support:$dagger_version"
 }
+
+ext {
+    bintrayRepo = 'maven'
+    bintrayName = 'dagger-auto-inject'
+    orgName = 'windsekirun'
+
+    publishedGroupId = 'com.github.windsekirun'
+    libraryName = 'DaggerAutoInject'
+    artifact = 'dagger-auto-inject'
+
+    libraryDescription = 'Inject automatically your Activities & Fragment & ViewModels, just with a simple annotation'
+
+    siteUrl = 'https://github.com/WindSekirun/DaggerAutoInject'
+    gitUrl = 'https://github.com/WindSekirun/DaggerAutoInject.git'
+
+    libraryVersion = rootProject.ext.libraryVersion
+
+    developerId = 'WindSekirun'
+    developerName = 'WindSekirun'
+    developerEmail = 'pyxis@uzuki.live'
+
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
+}
+
+
+apply from: rootProject.file('gradle/install-v1.gradle')
+apply from: rootProject.file('gradle/bintray-java-v1.gradle')

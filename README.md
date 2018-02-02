@@ -12,8 +12,8 @@ dependencies {
     annotationProcessor "android.arch.lifecycle:compiler:1.1.0"
     
     // dagger auto inject
-    implementation 'com.github.florent37:dagger-auto-inject:1.0.0'
-    annotationProcessor 'com.github.florent37:dagger-auto-inject-compiler:1.0.0'
+    implementation 'com.github.windsekirun:dagger-auto-inject:1.1.0'
+    annotationProcessor 'com.github.windsekirun:dagger-auto-inject-compiler:1.1.0'
 
     //dagger2
     compile "com.google.dagger:dagger:$dagger_version"
