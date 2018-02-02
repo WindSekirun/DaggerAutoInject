@@ -8,14 +8,16 @@ import com.squareup.javapoet.TypeName;
  */
 
 public class Constants {
-    public static final String PACKAGE_NAME = "com.github.florent37.daggerautoinject";
+    public static final String PACKAGE_NAME = "com.github.windsekirun.daggerautoinject";
     public static final String MAIN_CLASS_NAME = "DaggerAutoInject";
     public static final String ACTIVITY_MODULE = "ActivityModule";
     public static final String FRAGMENT_MODULE = "FragmentModule";
+    public static final String VIEWHOLDER_MODULE = "ViewModelModule";
 
     public static final String DAGGER = "Dagger";
     public static final String METHOD_INIT = "init";
     public static final String METHOD_CONTRIBUTE = "contribute_";
+    public static final String METHOD_BIND = "bind_";
     public static final String METHOD_HANDLE_ACTIVITY = "handleActivity";
     public static final String PARAM_APPLICATION = "application";
     public static final String PARAM_COMPONENT = "component";
@@ -29,7 +31,11 @@ public class Constants {
     public static final TypeName ANDROID_LOG = ClassName.bestGuess("android.util.Log");
     public static final TypeName BUNDLE = ClassName.bestGuess("android.os.Bundle");
     public static final TypeName FRAGMENT = ClassName.bestGuess("android.support.v4.app.Fragment");
+    public static final TypeName VIEWMODEL = ClassName.bestGuess("android.arch.lifecycle.ViewModel");
 
     public static final ClassName DAGGER_MODULE = ClassName.bestGuess("dagger.Module");
     public static final ClassName DAGGER_ANDROID_ANNOTATION = ClassName.bestGuess("dagger.android.ContributesAndroidInjector");
+    public static final ClassName DAGGER_BINDS = ClassName.bestGuess("dagger.Binds");
+    public static final ClassName DAGGER_INTOMAP = ClassName.bestGuess("dagger.multibindings.IntoMap");
+    public static final ClassName DAGGER_VIEWMODEL_KEY = ClassName.bestGuess("com.github.windsekirun.autoasync.processor.holders.ViewModelKey");
 }

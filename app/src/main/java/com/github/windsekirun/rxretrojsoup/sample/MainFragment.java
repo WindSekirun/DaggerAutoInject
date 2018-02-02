@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 
 import javax.inject.Inject;
 
+import com.github.florent37.rxretrojsoup.sample.R;
 import com.github.windsekirun.daggerautoinject.InjectFragment;
 
 @InjectFragment

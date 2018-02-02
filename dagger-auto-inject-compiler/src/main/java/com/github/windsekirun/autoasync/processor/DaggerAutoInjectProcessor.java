@@ -3,10 +3,14 @@ package com.github.windsekirun.autoasync.processor;
 import com.github.windsekirun.autoasync.processor.holders.ActivityHolder;
 import com.github.windsekirun.autoasync.processor.holders.ApplicationHolder;
 import com.github.windsekirun.autoasync.processor.holders.FragmentHolder;
+import com.github.windsekirun.autoasync.processor.holders.ViewModelHolder;
 import com.github.windsekirun.daggerautoinject.InjectActivity;
 import com.github.windsekirun.daggerautoinject.InjectApplication;
 import com.github.windsekirun.daggerautoinject.InjectFragment;
+import com.github.windsekirun.daggerautoinject.InjectViewModel;
+import com.github.windsekirun.daggerautoinject.ViewModelKey;
 import com.google.auto.service.AutoService;
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -33,9 +37,10 @@ import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 
 @SupportedAnnotationTypes({
-        "com.github.florent37.daggerautoinject.InjectActivity",
-        "com.github.florent37.daggerautoinject.InjectFragment",
-        "com.github.florent37.daggerautoinject.InjectApplication"
+        "com.github.windsekirun.daggerautoinject.InjectActivity",
+        "com.github.windsekirun.daggerautoinject.InjectFragment",
+        "com.github.windsekirun.daggerautoinject.InjectApplication",
+        "com.github.windsekirun.daggerautoinject.InjectViewModel"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_7)
 @AutoService(javax.annotation.processing.Processor.class)
@@ -43,6 +48,7 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
 
     private Map<ClassName, ActivityHolder> activityHolders = new HashMap<>();
     private Map<ClassName, FragmentHolder> fragmentHolders = new HashMap<>();
+    private Map<ClassName, ViewModelHolder> viewModelHolders = new HashMap<>();
     private ApplicationHolder applicationHolder;
     private Filer filer;
 
@@ -65,7 +71,7 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
         processAnnotations(env);
 
-        if(applicationHolder != null) {
+        if (applicationHolder != null) {
             writeHoldersOnJavaFile();
         }
         return true;
@@ -84,6 +90,12 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
             fragmentHolders.put(classFullName, new FragmentHolder(element, classFullName, className));
         }
 
+        for (Element element : env.getElementsAnnotatedWith(InjectViewModel.class)) {
+            final ClassName classFullName = ClassName.get((TypeElement) element); //com.github.florent37.sample.TutoAndroidFrance
+            final String className = element.getSimpleName().toString(); //TutoAndroidFrance
+            viewModelHolders.put(classFullName, new ViewModelHolder(element, classFullName, className));
+        }
+
         for (Element element : env.getElementsAnnotatedWith(InjectApplication.class)) {
             final ClassName classFullName = ClassName.get((TypeElement) element); //com.github.florent37.sample.TutoAndroidFrance
             final String className = element.getSimpleName().toString(); //TutoAndroidFrance
@@ -98,10 +110,12 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
     protected void writeHoldersOnJavaFile() {
         constructActivityModule();
         constructFragmentModule();
+        constructViewHolderModule();
         construct();
 
         fragmentHolders.clear();
         activityHolders.clear();
+        viewModelHolders.clear();
         applicationHolder = null;
     }
 
@@ -155,6 +169,37 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
         }
     }
 
+    private void constructViewHolderModule() {
+        final TypeSpec.Builder builder = TypeSpec.classBuilder(Constants.VIEWHOLDER_MODULE)
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addAnnotation(Constants.DAGGER_MODULE);
+
+        for (ViewModelHolder viewModelHolder : viewModelHolders.values()) {
+            TypeName typeName = viewModelHolder.classNameComplete;
+            String parameterName = String.valueOf(viewModelHolder.className.charAt(0)).toLowerCase() + viewModelHolder.className.substring(1);
+
+            builder.addMethod(MethodSpec.methodBuilder(Constants.METHOD_BIND + viewModelHolder.className)
+                    .addAnnotation(Constants.DAGGER_BINDS)
+                    .addParameter(typeName, parameterName)
+                    .addAnnotation(Constants.DAGGER_INTOMAP)
+                    .addAnnotation(AnnotationSpec.builder(ViewModelKey.class).addMember("value", viewModelHolder.className + ".class").build())
+                    .addModifiers(Modifier.ABSTRACT)
+                    .returns(Constants.VIEWMODEL)
+                    .build()
+            );
+        }
+
+        final TypeSpec newClass = builder.build();
+        final JavaFile javaFile = JavaFile.builder(Constants.PACKAGE_NAME, newClass).build();
+
+        try {
+            javaFile.writeTo(System.out);
+            javaFile.writeTo(filer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void construct() {
 
         final TypeSpec.Builder builder = TypeSpec.classBuilder(Constants.MAIN_CLASS_NAME)
@@ -181,7 +226,7 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
                         .addParameter(applicationHolder.classNameComplete, Constants.PARAM_APPLICATION)
                         .addParameter(component, Constants.PARAM_COMPONENT);
 
-                    methodInit.addStatement("$L.inject($L)", Constants.PARAM_COMPONENT, Constants.PARAM_APPLICATION);
+                methodInit.addStatement("$L.inject($L)", Constants.PARAM_COMPONENT, Constants.PARAM_APPLICATION);
             }
 
 

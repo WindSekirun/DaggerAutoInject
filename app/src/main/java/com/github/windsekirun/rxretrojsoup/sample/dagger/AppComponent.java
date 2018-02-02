@@ -4,6 +4,7 @@ import android.app.Application;
 
 import com.github.windsekirun.daggerautoinject.ActivityModule;
 import com.github.windsekirun.daggerautoinject.FragmentModule;
+import com.github.windsekirun.daggerautoinject.ViewModelModule;
 import com.github.windsekirun.rxretrojsoup.sample.MainApplication;
 
 import javax.inject.Singleton;
@@ -22,6 +23,7 @@ import dagger.android.support.AndroidSupportInjectionModule;
 
         ActivityModule.class,
         FragmentModule.class,
+        ViewModelModule.class
 })
 public interface AppComponent {
     void inject(MainApplication application);
@@ -30,6 +32,7 @@ public interface AppComponent {
     interface Builder {
         @BindsInstance
         Builder application(Application application);
+
         AppComponent build();
     }
 }

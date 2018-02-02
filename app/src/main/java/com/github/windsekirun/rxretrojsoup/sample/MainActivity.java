@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 
+import com.github.florent37.rxretrojsoup.sample.R;
 import com.github.windsekirun.daggerautoinject.InjectActivity;
 
 import javax.inject.Inject;
