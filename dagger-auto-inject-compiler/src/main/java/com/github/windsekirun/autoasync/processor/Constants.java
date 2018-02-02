@@ -1,4 +1,4 @@
-package com.github.florent37.autoasync.processor;
+package com.github.windsekirun.autoasync.processor;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;

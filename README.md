@@ -1,40 +1,8 @@
 # DaggerAutoInject
+**Inject automatically your Activities & Fragments & ViewModels, just with a simple annotation**
 
-**Inject automatically your Activities & Fragments, just with a simple annotation**
+## Download
 
-
-<a href="https://goo.gl/WXW8Dc">
-  <img alt="Android app on Google Play" src="https://developer.android.com/images/brand/en_app_rgb_wo_45.png" />
-</a>
-
-
-```java
-@InjectActivity
-public class MainActivity extends AppCompatActivity {
-
-    @Inject
-    SharedPreferences sharedPreferences;
-
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        sharedPreferences.edit()
-                 .putString("androidVerions", "O")
-                 .apply();
-    }
-
-}
-```
-
-# Download
-
-In your module [![Download](https://api.bintray.com/packages/florent37/maven/dagger-auto-inject-compiler/images/download.svg)](https://bintray.com/florent37/maven/dagger-auto-inject-compiler/_latestVersion)
 ```groovy
 def dagger_version = "2.11-rc2"
 
@@ -52,7 +20,7 @@ dependencies {
 }
 ```
 
-# Component
+## Component
 
 Just add generated `ActivityModule.class` and `FragmentModule.class` into your Dagger's component
 
@@ -79,7 +47,7 @@ public interface AppComponent {
 }
 ```
 
-# Setup Application
+## Setup Application
 
 Just annotate your application with `@InjectApplication` givin your Component, 
 then call `DaggerAutoInject.init(this);`
@@ -111,7 +79,33 @@ public class MainApplication extends Application implements HasActivityInjector 
 }
 ```
 
-# Inject Fragment
+## Inject Activity
+
+```java
+@InjectActivity
+public class MainActivity extends AppCompatActivity {
+
+    @Inject
+    SharedPreferences sharedPreferences;
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        sharedPreferences.edit()
+                 .putString("androidVerions", "O")
+                 .apply();
+    }
+
+}
+```
+
+## Inject Fragment
 
 Just add `@InjectFragment` to your fragment
 
@@ -157,28 +151,13 @@ public class BaseActivity extends AppCompatActivity implements HasSupportFragmen
 
 # Credits
 
-Author: Florent Champigny
-
-<a href="https://goo.gl/WXW8Dc">
-  <img alt="Android app on Google Play" src="https://developer.android.com/images/brand/en_app_rgb_wo_45.png" />
-</a>
-
-<a href="https://plus.google.com/+florentchampigny">
-  <img alt="Follow me on Google+"
-       src="https://raw.githubusercontent.com/florent37/DaVinci/master/mobile/src/main/res/drawable-hdpi/gplus.png" />
-</a>
-<a href="https://twitter.com/florent_champ">
-  <img alt="Follow me on Twitter"
-       src="https://raw.githubusercontent.com/florent37/DaVinci/master/mobile/src/main/res/drawable-hdpi/twitter.png" />
-</a>
-<a href="https://fr.linkedin.com/in/florentchampigny">
-  <img alt="Follow me on LinkedIn"
-       src="https://raw.githubusercontent.com/florent37/DaVinci/master/mobile/src/main/res/drawable-hdpi/linkedin.png" />
-</a>
-
+* Author: Florent Champigny
+* Editor: WindSekirun (DongGil, Seo)
 # License
 
     Copyright 2017 florent37, Inc.
+    Copyright 2018 WindSekirun (DongGil, Seo)
+   
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

@@ -1,10 +1,10 @@
-package com.github.florent37.rxretrojsoup.sample;
+package com.github.windsekirun.rxretrojsoup.sample;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 
-import com.github.florent37.daggerautoinject.InjectActivity;
+import com.github.windsekirun.daggerautoinject.InjectActivity;
 
 import javax.inject.Inject;
 

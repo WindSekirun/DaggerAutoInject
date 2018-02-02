@@ -1,4 +1,4 @@
-package com.github.florent37.rxretrojsoup.sample;
+package com.github.windsekirun.rxretrojsoup.sample;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 
 import javax.inject.Inject;
 
-import com.github.florent37.daggerautoinject.InjectFragment;
+import com.github.windsekirun.daggerautoinject.InjectFragment;
 
 @InjectFragment
 public class MainFragment extends Fragment {

@@ -1,4 +1,4 @@
-package com.github.florent37.rxretrojsoup.sample.dagger;
+package com.github.windsekirun.rxretrojsoup.sample.dagger;
 
 import android.app.Application;
 import android.content.Context;

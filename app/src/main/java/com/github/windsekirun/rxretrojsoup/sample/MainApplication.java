@@ -1,13 +1,13 @@
-package com.github.florent37.rxretrojsoup.sample;
+package com.github.windsekirun.rxretrojsoup.sample;
 
 import android.app.Activity;
 import android.app.Application;
 
-import com.github.florent37.daggerautoinject.DaggerAutoInject;
-import com.github.florent37.rxretrojsoup.sample.dagger.AppComponent;
+import com.github.windsekirun.daggerautoinject.DaggerAutoInject;
+import com.github.windsekirun.rxretrojsoup.sample.dagger.AppComponent;
 
-import com.github.florent37.daggerautoinject.InjectApplication;
-import com.github.florent37.rxretrojsoup.sample.dagger.DaggerAppComponent;
+import com.github.windsekirun.daggerautoinject.InjectApplication;
+import com.github.windsekirun.rxretrojsoup.sample.dagger.DaggerAppComponent;
 
 import javax.inject.Inject;
 

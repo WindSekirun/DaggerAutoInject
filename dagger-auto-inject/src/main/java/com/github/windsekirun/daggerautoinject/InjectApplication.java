@@ -1,4 +1,4 @@
-package com.github.florent37.daggerautoinject;
+package com.github.windsekirun.daggerautoinject;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

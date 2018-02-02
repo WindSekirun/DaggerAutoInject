@@ -1,4 +1,4 @@
-package com.github.florent37.rxretrojsoup.sample;
+package com.github.windsekirun.rxretrojsoup.sample;
 
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;

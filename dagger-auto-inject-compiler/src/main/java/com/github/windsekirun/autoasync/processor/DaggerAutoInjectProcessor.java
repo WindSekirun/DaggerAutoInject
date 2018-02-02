@@ -1,11 +1,11 @@
-package com.github.florent37.autoasync.processor;
+package com.github.windsekirun.autoasync.processor;
 
-import com.github.florent37.autoasync.processor.holders.ActivityHolder;
-import com.github.florent37.autoasync.processor.holders.ApplicationHolder;
-import com.github.florent37.autoasync.processor.holders.FragmentHolder;
-import com.github.florent37.daggerautoinject.InjectActivity;
-import com.github.florent37.daggerautoinject.InjectApplication;
-import com.github.florent37.daggerautoinject.InjectFragment;
+import com.github.windsekirun.autoasync.processor.holders.ActivityHolder;
+import com.github.windsekirun.autoasync.processor.holders.ApplicationHolder;
+import com.github.windsekirun.autoasync.processor.holders.FragmentHolder;
+import com.github.windsekirun.daggerautoinject.InjectActivity;
+import com.github.windsekirun.daggerautoinject.InjectApplication;
+import com.github.windsekirun.daggerautoinject.InjectFragment;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
