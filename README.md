@@ -4,10 +4,15 @@
 ## Download
 
 ```groovy
-def dagger_version = "2.11-rc2"
+def dagger_version = "2.14.1"
 
 dependencies {
-    compile 'com.github.florent37:dagger-auto-inject:1.0.0'
+    // aac
+    implementation "android.arch.lifecycle:extensions:1.1.0"
+    annotationProcessor "android.arch.lifecycle:compiler:1.1.0"
+    
+    // dagger auto inject
+    implementation 'com.github.florent37:dagger-auto-inject:1.0.0'
     annotationProcessor 'com.github.florent37:dagger-auto-inject-compiler:1.0.0'
 
     //dagger2
@@ -34,6 +39,7 @@ Just add generated `ActivityModule.class` and `FragmentModule.class` into your D
 
         ActivityModule.class,
         FragmentModule.class,
+        ViewModelModule.class
 })
 public interface AppComponent {
     void inject(MainApplication application);
@@ -106,7 +112,6 @@ public class MainActivity extends AppCompatActivity {
 ```
 
 ## Inject Fragment
-
 Just add `@InjectFragment` to your fragment
 
 ```java
@@ -146,6 +151,14 @@ public class BaseActivity extends AppCompatActivity implements HasSupportFragmen
     public AndroidInjector<Fragment> supportFragmentInjector() {
         return dispatchingFragmentInjector;
     }
+}
+```
+
+## Inject ViewModel (for AAC)
+
+```Java
+@InjectViewModel
+public class MainViewModel extends ViewModel {
 }
 ```
 
