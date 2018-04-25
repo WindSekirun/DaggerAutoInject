@@ -237,7 +237,7 @@ public class MainBroadcastReceiver extends BroadcastReceiver {
 }
 ```
 
-Since [AppWidgetProvider](https://developer.android.com/reference/android/appwidget/AppWidgetProvider.html) is sub-type of BroadcastReceiver, you can inject AppWidgetInject too!
+Since [AppWidgetProvider](https://developer.android.com/reference/android/appwidget/AppWidgetProvider.html) is sub-type of BroadcastReceiver, you can inject AppWidgetProvider too!
 
 ## Inject ContentProvider
 
