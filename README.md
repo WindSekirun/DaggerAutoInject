@@ -1,5 +1,5 @@
 # DaggerAutoInject
-**Inject automatically your Activities & Fragments & ViewModels, just with a simple annotation**
+**Inject automatically your Activities & Fragments & ViewModels & Service & BroadcastReceiver & ContentProvider, just with a simple annotation**
 
 ## Download
 
@@ -12,8 +12,8 @@ dependencies {
     annotationProcessor "android.arch.lifecycle:compiler:1.1.0"
     
     // dagger auto inject
-    implementation 'com.github.windsekirun:dagger-auto-inject:1.1.0'
-    annotationProcessor 'com.github.windsekirun:dagger-auto-inject-compiler:1.1.0'
+    implementation 'com.github.windsekirun:dagger-auto-inject:1.5.0'
+    annotationProcessor 'com.github.windsekirun:dagger-auto-inject-compiler:1.5.0'
 
     //dagger2
     compile "com.google.dagger:dagger:$dagger_version"
@@ -27,7 +27,7 @@ dependencies {
 
 ## Component
 
-Just add generated `ActivityModule.class` and `FragmentModule.class` into your Dagger's component
+Just add generated classes into your Dagger's component
 
 ```java
 @Singleton
@@ -39,7 +39,10 @@ Just add generated `ActivityModule.class` and `FragmentModule.class` into your D
 
         ActivityModule.class,
         FragmentModule.class,
-        ViewModelModule.class
+        ViewModelModule.class,
+        ServiceModule.class,
+        BroadcastReceiverModule.class,
+        ContentProviderModule.class
 })
 public interface AppComponent {
     void inject(MainApplication application);
@@ -58,14 +61,17 @@ public interface AppComponent {
 Just annotate your application with `@InjectApplication` givin your Component, 
 then call `DaggerAutoInject.init(this);`
 
-Don't forget to implement `HasActivityInjector` as follow
+Don't forget to implement `HasActivityInjector`, `HasServiceInjector`, `HasBroadcastReceiverInjector`, `HasContentProviderInjector` as follow
 
 ```java
 @InjectApplication(component = AppComponent.class)
-public class MainApplication extends Application implements HasActivityInjector {
+public class MainApplication extends Application implements HasActivityInjector, HasServiceInjector,
+    HasBroadcastReceiverInjector, HasContentProviderInjector {
 
-    @Inject
-    DispatchingAndroidInjector<Activity> activityAndroidInjector;
+    @Inject DispatchingAndroidInjector<Activity> mActivityDispatchingAndroidInjector;
+    @Inject DispatchingAndroidInjector<Service> mServiceDispatchingAndroidInjector;
+    @Inject DispatchingAndroidInjector<BroadcastReceiver> mBroadcastReceiverDispatchingAndroidInjector;
+    @Inject DispatchingAndroidInjector<ContentProvider> mContentProviderDispatchingAndroidInjector;
 
     @Override
     public void onCreate() {
@@ -78,10 +84,25 @@ public class MainApplication extends Application implements HasActivityInjector 
         DaggerAutoInject.init(this, appComponent);
     }
 
-    @Override
-    public AndroidInjector<Activity> activityInjector() {
-        return activityAndroidInjector;
-    }
+     @Override
+     public AndroidInjector<Activity> activityInjector() {
+         return mActivityDispatchingAndroidInjector;
+     }
+
+     @Override
+     public AndroidInjector<Service> serviceInjector() {
+         return mServiceDispatchingAndroidInjector;
+     }
+
+     @Override
+     public AndroidInjector<BroadcastReceiver> broadcastReceiverInjector() {
+         return mBroadcastReceiverDispatchingAndroidInjector;
+     }
+
+     @Override
+     public AndroidInjector<ContentProvider> contentProviderInjector() {
+         return mContentProviderDispatchingAndroidInjector;
+     }
 }
 ```
 
@@ -112,7 +133,6 @@ public class MainActivity extends AppCompatActivity {
 ```
 
 ## Inject Fragment
-Just add `@InjectFragment` to your fragment
 
 ```java
 @InjectFragment
@@ -154,11 +174,82 @@ public class BaseActivity extends AppCompatActivity implements HasSupportFragmen
 }
 ```
 
-## Inject ViewModel (for AAC)
+## Inject ViewModel within [AAC (Android Architecture Components)](https://developer.android.com/topic/libraries/architecture/index.html)
 
 ```Java
 @InjectViewModel
-public class MainViewModel extends ViewModel {
+public class MainViewModel extends AndroidViewModel {
+
+   @Inject
+   public MainViewModel(MainApplication application) {
+        super(application);
+   }
+}
+```
+
+Then add [DaggerViewModelFactory.kt](https://github.com/WindSekirun/DaggerAutoInject/blob/master/app/src/main/java/com/github/windsekirun/rxretrojsoup/sample/viewmodel/DaggerViewModelFactory.kt) in your project, and provides into Dagger
+
+```Java
+@Module
+public abstract class BaseBindsModule {
+    @Binds
+    abstract ViewModelProvider.Factory bindViewModelFactory(DaggerViewModelFactory factory);
+}
+```
+
+Now, you can get instance of ViewModel with Dagger.
+
+```Java
+    private MainViewModel mViewModel;
+    @Inject ViewModelProvider.Factory mViewModelFactory;
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(this, R.layout.main_activity, BindingComponent.create(this));
+        mViewModel = ViewModelProviders.of(this, mViewModelFactory).get(MainViewModel.class);
+    }
+```
+
+## Inject Service
+
+```Java
+@InjectService
+public class MainService extends Service {
+
+    @Override
+    public void onCreate() {
+        AndroidInjection.inject(this);
+        super.onCreate();
+    }
+}
+```
+
+## Inject BroadcastReceiver
+
+```Java
+@InjectBroadcastReceiver
+public class MainBroadcastReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        AndroidInjection.inject(this, context);
+    }
+}
+```
+
+Since [AppWidgetProvider](https://developer.android.com/reference/android/appwidget/AppWidgetProvider.html) is sub-type of BroadcastReceiver, you can inject AppWidgetInject too!
+
+## Inject ContentProvider
+
+```Java
+@InjectContentProvider
+public class MainContentProvider extends ContentProvider {
+    @Override
+    public boolean onCreate() {
+        AndroidInjection.inject(this);
+        return false;
+    }
+
 }
 ```
 

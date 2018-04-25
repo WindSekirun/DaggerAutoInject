@@ -1,12 +1,11 @@
 package com.github.windsekirun.autoasync.processor;
 
-import com.github.windsekirun.autoasync.processor.holders.ActivityHolder;
-import com.github.windsekirun.autoasync.processor.holders.ApplicationHolder;
-import com.github.windsekirun.autoasync.processor.holders.FragmentHolder;
-import com.github.windsekirun.autoasync.processor.holders.ViewModelHolder;
 import com.github.windsekirun.daggerautoinject.InjectActivity;
 import com.github.windsekirun.daggerautoinject.InjectApplication;
+import com.github.windsekirun.daggerautoinject.InjectBroadcastReceiver;
+import com.github.windsekirun.daggerautoinject.InjectContentProvider;
 import com.github.windsekirun.daggerautoinject.InjectFragment;
+import com.github.windsekirun.daggerautoinject.InjectService;
 import com.github.windsekirun.daggerautoinject.InjectViewModel;
 import com.github.windsekirun.daggerautoinject.ViewModelKey;
 import com.google.auto.service.AutoService;
@@ -40,17 +39,23 @@ import javax.lang.model.type.TypeMirror;
         "com.github.windsekirun.daggerautoinject.InjectActivity",
         "com.github.windsekirun.daggerautoinject.InjectFragment",
         "com.github.windsekirun.daggerautoinject.InjectApplication",
-        "com.github.windsekirun.daggerautoinject.InjectViewModel"
+        "com.github.windsekirun.daggerautoinject.InjectViewModel",
+        "com.github.windsekirun.daggerautoinject.InjectService",
+        "com.github.windsekirun.daggerautoinject.InjectBroadcastReceiver",
+        "com.github.windsekirun.daggerautoinject.InjectContentProvider"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_7)
 @AutoService(javax.annotation.processing.Processor.class)
 public class DaggerAutoInjectProcessor extends AbstractProcessor {
+    private Map<ClassName, ContributesHolder> mActivityHolders = new HashMap<>();
+    private Map<ClassName, ContributesHolder> mFragmentHolders = new HashMap<>();
+    private Map<ClassName, ContributesHolder> mViewModelHolders = new HashMap<>();
+    private Map<ClassName, ContributesHolder> mServiceHolders = new HashMap<>();
+    private Map<ClassName, ContributesHolder> mBroadcastHolders = new HashMap<>();
+    private Map<ClassName, ContributesHolder> mContentHolders = new HashMap<>();
 
-    private Map<ClassName, ActivityHolder> activityHolders = new HashMap<>();
-    private Map<ClassName, FragmentHolder> fragmentHolders = new HashMap<>();
-    private Map<ClassName, ViewModelHolder> viewModelHolders = new HashMap<>();
-    private ApplicationHolder applicationHolder;
-    private Filer filer;
+    private ApplicationHolder mApplicationHolder;
+    private Filer mFiler;
 
     private static TypeMirror getComponent(InjectApplication annotation) {
         try {
@@ -64,109 +69,53 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
     @Override
     public synchronized void init(ProcessingEnvironment env) {
         super.init(env);
-        filer = env.getFiler();
+        mFiler = env.getFiler();
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
         processAnnotations(env);
 
-        if (applicationHolder != null) {
+        if (mApplicationHolder != null) {
             writeHoldersOnJavaFile();
         }
         return true;
     }
 
-    protected void processAnnotations(RoundEnvironment env) {
-        for (Element element : env.getElementsAnnotatedWith(InjectActivity.class)) {
-            final ClassName classFullName = ClassName.get((TypeElement) element); //com.github.florent37.sample.TutoAndroidFrance
-            final String className = element.getSimpleName().toString(); //TutoAndroidFrance
-            activityHolders.put(classFullName, new ActivityHolder(element, classFullName, className));
-        }
-
-        for (Element element : env.getElementsAnnotatedWith(InjectFragment.class)) {
-            final ClassName classFullName = ClassName.get((TypeElement) element); //com.github.florent37.sample.TutoAndroidFrance
-            final String className = element.getSimpleName().toString(); //TutoAndroidFrance
-            fragmentHolders.put(classFullName, new FragmentHolder(element, classFullName, className));
-        }
-
-        for (Element element : env.getElementsAnnotatedWith(InjectViewModel.class)) {
-            final ClassName classFullName = ClassName.get((TypeElement) element); //com.github.florent37.sample.TutoAndroidFrance
-            final String className = element.getSimpleName().toString(); //TutoAndroidFrance
-            viewModelHolders.put(classFullName, new ViewModelHolder(element, classFullName, className));
-        }
+    private void processAnnotations(RoundEnvironment env) {
+        Utils.processHolders(env, InjectActivity.class, mActivityHolders);
+        Utils.processHolders(env, InjectFragment.class, mFragmentHolders);
+        Utils.processHolders(env, InjectService.class, mServiceHolders);
+        Utils.processHolders(env, InjectBroadcastReceiver.class, mBroadcastHolders);
+        Utils.processHolders(env, InjectContentProvider.class, mContentHolders);
+        Utils.processHolders(env, InjectViewModel.class, mViewModelHolders);
 
         for (Element element : env.getElementsAnnotatedWith(InjectApplication.class)) {
-            final ClassName classFullName = ClassName.get((TypeElement) element); //com.github.florent37.sample.TutoAndroidFrance
-            final String className = element.getSimpleName().toString(); //TutoAndroidFrance
-
+            final ClassName classFullName = ClassName.get((TypeElement) element);
+            final String className = element.getSimpleName().toString();
             final TypeMirror componentClass = getComponent(element.getAnnotation(InjectApplication.class));
 
-            applicationHolder = new ApplicationHolder(element, classFullName, className);
-            applicationHolder.setComponentClass(componentClass);
+            mApplicationHolder = new ApplicationHolder(element, classFullName, className);
+            mApplicationHolder.setComponentClass(componentClass);
         }
     }
 
-    protected void writeHoldersOnJavaFile() {
-        constructActivityModule();
-        constructFragmentModule();
+    private void writeHoldersOnJavaFile() {
+        Utils.constructContributesAndroidInjector(Constants.ACTIVITY_MODULE, mActivityHolders.values(), mFiler);
+        Utils.constructContributesAndroidInjector(Constants.SERVICE_MODULE, mServiceHolders.values(), mFiler);
+        Utils.constructContributesAndroidInjector(Constants.FRAGMENT_MODULE, mFragmentHolders.values(), mFiler);
+        Utils.constructContributesAndroidInjector(Constants.BROADCAST_MODULE, mBroadcastHolders.values(), mFiler);
+        Utils.constructContributesAndroidInjector(Constants.CONTENT_MODULE, mContentHolders.values(), mFiler);
         constructViewHolderModule();
         construct();
 
-        fragmentHolders.clear();
-        activityHolders.clear();
-        viewModelHolders.clear();
-        applicationHolder = null;
-    }
-
-    private void constructActivityModule() {
-        final TypeSpec.Builder builder = TypeSpec.classBuilder(Constants.ACTIVITY_MODULE)
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .addAnnotation(Constants.DAGGER_MODULE);
-
-        for (ActivityHolder activityHolder : activityHolders.values()) {
-            builder.addMethod(MethodSpec.methodBuilder(Constants.METHOD_CONTRIBUTE + activityHolder.className)
-                    .addAnnotation(Constants.DAGGER_ANDROID_ANNOTATION)
-                    .addModifiers(Modifier.ABSTRACT)
-                    .returns(activityHolder.classNameComplete)
-                    .build()
-            );
-        }
-
-        final TypeSpec newClass = builder.build();
-        final JavaFile javaFile = JavaFile.builder(Constants.PACKAGE_NAME, newClass).build();
-
-        try {
-            javaFile.writeTo(System.out);
-            javaFile.writeTo(filer);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void constructFragmentModule() {
-        final TypeSpec.Builder builder = TypeSpec.classBuilder(Constants.FRAGMENT_MODULE)
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .addAnnotation(Constants.DAGGER_MODULE);
-
-        for (FragmentHolder fragmentHolder : fragmentHolders.values()) {
-            builder.addMethod(MethodSpec.methodBuilder(Constants.METHOD_CONTRIBUTE + fragmentHolder.className)
-                    .addAnnotation(Constants.DAGGER_ANDROID_ANNOTATION)
-                    .addModifiers(Modifier.ABSTRACT)
-                    .returns(fragmentHolder.classNameComplete)
-                    .build()
-            );
-        }
-
-        final TypeSpec newClass = builder.build();
-        final JavaFile javaFile = JavaFile.builder(Constants.PACKAGE_NAME, newClass).build();
-
-        try {
-            javaFile.writeTo(System.out);
-            javaFile.writeTo(filer);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        mFragmentHolders.clear();
+        mActivityHolders.clear();
+        mViewModelHolders.clear();
+        mServiceHolders.clear();
+        mBroadcastHolders.clear();
+        mContentHolders.clear();
+        mApplicationHolder = null;
     }
 
     private void constructViewHolderModule() {
@@ -174,15 +123,17 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .addAnnotation(Constants.DAGGER_MODULE);
 
-        for (ViewModelHolder viewModelHolder : viewModelHolders.values()) {
-            TypeName typeName = viewModelHolder.classNameComplete;
-            String parameterName = String.valueOf(viewModelHolder.className.charAt(0)).toLowerCase() + viewModelHolder.className.substring(1);
+        for (ContributesHolder contributesHolder : mViewModelHolders.values()) {
+            TypeName typeName = contributesHolder.classNameComplete;
+            String parameterName = String.valueOf(contributesHolder.className.charAt(0)).toLowerCase() +
+                    contributesHolder.className.substring(1);
 
-            builder.addMethod(MethodSpec.methodBuilder(Constants.METHOD_BIND + viewModelHolder.className)
+            builder.addMethod(MethodSpec.methodBuilder(Constants.METHOD_BIND + contributesHolder.className)
                     .addAnnotation(Constants.DAGGER_BINDS)
                     .addParameter(typeName, parameterName)
                     .addAnnotation(Constants.DAGGER_INTOMAP)
-                    .addAnnotation(AnnotationSpec.builder(ViewModelKey.class).addMember("value", viewModelHolder.className + ".class").build())
+                    .addAnnotation(AnnotationSpec.builder(ViewModelKey.class)
+                            .addMember("value", contributesHolder.className + ".class").build())
                     .addModifiers(Modifier.ABSTRACT)
                     .returns(Constants.VIEWMODEL)
                     .build()
@@ -194,14 +145,13 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
 
         try {
             javaFile.writeTo(System.out);
-            javaFile.writeTo(filer);
+            javaFile.writeTo(mFiler);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private void construct() {
-
         final TypeSpec.Builder builder = TypeSpec.classBuilder(Constants.MAIN_CLASS_NAME)
                 .addModifiers(Modifier.PUBLIC);
 
@@ -214,123 +164,99 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
                         .build()
         );
 
-        //final ClassName daggerComponent = findDaggerComponent(applicationHolder.componentClass);
-        final ClassName component = findComponent(applicationHolder.componentClass);
+        //final ClassName daggerComponent = findDaggerComponent(mApplicationHolder.componentClass);
+        final ClassName component = findComponent(mApplicationHolder.componentClass);
 
-        {
-            final MethodSpec.Builder methodInit = MethodSpec.methodBuilder(Constants.METHOD_INIT)
-                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
-            if (applicationHolder != null) {
+        final MethodSpec.Builder methodInit = MethodSpec.methodBuilder(Constants.METHOD_INIT)
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
+        if (mApplicationHolder != null) {
 
-                methodInit
-                        .addParameter(applicationHolder.classNameComplete, Constants.PARAM_APPLICATION)
-                        .addParameter(component, Constants.PARAM_COMPONENT);
+            methodInit
+                    .addParameter(mApplicationHolder.classNameComplete, Constants.PARAM_APPLICATION)
+                    .addParameter(component, Constants.PARAM_COMPONENT);
 
-                methodInit.addStatement("$L.inject($L)", Constants.PARAM_COMPONENT, Constants.PARAM_APPLICATION);
-            }
-
-
-            methodInit.addStatement("application.registerActivityLifecycleCallbacks(new $T.ActivityLifecycleCallbacks() {\n" +
-                            "            @Override\n" +
-                            "            public void onActivityCreated($T activity, $T savedInstanceState) {\n" +
-                            "                " + Constants.METHOD_HANDLE_ACTIVITY + "(activity);\n" +
-                            "            }\n" +
-                            "\n" +
-                            "            @Override\n" +
-                            "            public void onActivityStarted(Activity activity) {\n" +
-                            "\n" +
-                            "            }\n" +
-                            "\n" +
-                            "            @Override\n" +
-                            "            public void onActivityResumed(Activity activity) {\n" +
-                            "\n" +
-                            "            }\n" +
-                            "\n" +
-                            "            @Override\n" +
-                            "            public void onActivityPaused(Activity activity) {\n" +
-                            "\n" +
-                            "            }\n" +
-                            "\n" +
-                            "            @Override\n" +
-                            "            public void onActivityStopped(Activity activity) {\n" +
-                            "\n" +
-                            "            }\n" +
-                            "\n" +
-                            "            @Override\n" +
-                            "            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {\n" +
-                            "\n" +
-                            "            }\n" +
-                            "\n" +
-                            "            @Override\n" +
-                            "            public void onActivityDestroyed(Activity activity) {\n" +
-                            "\n" +
-                            "            }\n" +
-                            "        });",
-
-                    Constants.APPLICATION,
-                    Constants.ACTIVITY,
-                    Constants.BUNDLE
-            );
-
-            builder.addMethod(methodInit.build());
+            methodInit.addStatement("$L.inject($L)", Constants.PARAM_COMPONENT, Constants.PARAM_APPLICATION);
         }
 
-        /*
-        {
-            final MethodSpec.Builder methodInit = MethodSpec.methodBuilder(Constants.METHOD_INIT)
-                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
-            if (applicationHolder != null) {
-                methodInit
-                        .addParameter(applicationHolder.classNameComplete, Constants.PARAM_APPLICATION);
 
-                if (applicationHolder.componentClass != null) {
-                    methodInit.addCode("$T component = $T.builder()\n" +
-                                    "                .application(" + Constants.PARAM_APPLICATION + ")\n" +
-                                    "                .build();\n",
-                            component, daggerComponent);
-                    methodInit.addStatement("$L($L, $L)", Constants.METHOD_INIT, Constants.PARAM_APPLICATION, Constants.PARAM_COMPONENT);
-                }
-            }
-            builder.addMethod(methodInit.build());
-        }
-        */
+        methodInit.addStatement("application.registerActivityLifecycleCallbacks(new $T.ActivityLifecycleCallbacks() {\n" +
+                        "            @Override\n" +
+                        "            public void onActivityCreated($T activity, $T savedInstanceState) {\n" +
+                        "                " + Constants.METHOD_HANDLE_ACTIVITY + "(activity);\n" +
+                        "            }\n" +
+                        "\n" +
+                        "            @Override\n" +
+                        "            public void onActivityStarted(Activity activity) {\n" +
+                        "\n" +
+                        "            }\n" +
+                        "\n" +
+                        "            @Override\n" +
+                        "            public void onActivityResumed(Activity activity) {\n" +
+                        "\n" +
+                        "            }\n" +
+                        "\n" +
+                        "            @Override\n" +
+                        "            public void onActivityPaused(Activity activity) {\n" +
+                        "\n" +
+                        "            }\n" +
+                        "\n" +
+                        "            @Override\n" +
+                        "            public void onActivityStopped(Activity activity) {\n" +
+                        "\n" +
+                        "            }\n" +
+                        "\n" +
+                        "            @Override\n" +
+                        "            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {\n" +
+                        "\n" +
+                        "            }\n" +
+                        "\n" +
+                        "            @Override\n" +
+                        "            public void onActivityDestroyed(Activity activity) {\n" +
+                        "\n" +
+                        "            }\n" +
+                        "        });",
 
-        {
-            final MethodSpec.Builder methodHandleActivity = MethodSpec.methodBuilder(Constants.METHOD_HANDLE_ACTIVITY)
-                    .addModifiers(Modifier.PROTECTED, Modifier.STATIC)
-                    .addParameter(Constants.ACTIVITY, "activity");
+                Constants.APPLICATION,
+                Constants.ACTIVITY,
+                Constants.BUNDLE
+        );
 
-            methodHandleActivity.addCode("try {\n" +
-                            "            $T.inject(activity);\n" +
-                            "        } catch (Exception e){\n" +
-                            "            $T.d(TAG, activity.getClass().toString()+\" non injected\");\n" +
-                            "        }\n" +
-                            "        if (activity instanceof $T) {\n" +
-                            "            final $T supportFragmentManager = ((FragmentActivity) activity).getSupportFragmentManager();\n" +
-                            "            supportFragmentManager.registerFragmentLifecycleCallbacks(\n" +
-                            "                    new FragmentManager.FragmentLifecycleCallbacks() {\n" +
-                            "                        @Override\n" +
-                            "                        public void onFragmentCreated(FragmentManager fm, $T f, $T savedInstanceState) {\n" +
-                            "                            try {\n" +
-                            "                                $T.inject(f);\n" +
-                            "                            } catch (Exception e){\n" +
-                            "                                Log.d(TAG, f.getClass().toString()+\" non injected\");\n" +
-                            "                            }\n" +
-                            "                        }\n" +
-                            "                    }, true);\n" +
-                            "        }",
+        builder.addMethod(methodInit.build());
 
-                    Constants.ANDROID_INJECTION,
-                    Constants.ANDROID_LOG,
-                    Constants.FRAGMENT_ACTIVITY,
-                    Constants.FRAGMENT_MANAGER,
-                    Constants.FRAGMENT,
-                    Constants.BUNDLE,
-                    Constants.ANDROID_SUPPORT_INJECTION
-            );
+        final MethodSpec.Builder methodHandleActivity = MethodSpec.methodBuilder(Constants.METHOD_HANDLE_ACTIVITY)
+                .addModifiers(Modifier.PROTECTED, Modifier.STATIC)
+                .addParameter(Constants.ACTIVITY, "activity");
 
-            builder.addMethod(methodHandleActivity.build());
-        }
+        methodHandleActivity.addCode("try {\n" +
+                        "            $T.inject(activity);\n" +
+                        "        } catch (Exception e){\n" +
+                        "            $T.d(TAG, activity.getClass().toString()+\" non injected\");\n" +
+                        "        }\n" +
+                        "        if (activity instanceof $T) {\n" +
+                        "            final $T supportFragmentManager = ((FragmentActivity) activity).getSupportFragmentManager();\n" +
+                        "            supportFragmentManager.registerFragmentLifecycleCallbacks(\n" +
+                        "                    new FragmentManager.FragmentLifecycleCallbacks() {\n" +
+                        "                        @Override\n" +
+                        "                        public void onFragmentCreated(FragmentManager fm, $T f, $T savedInstanceState) {\n" +
+                        "                            try {\n" +
+                        "                                $T.inject(f);\n" +
+                        "                            } catch (Exception e){\n" +
+                        "                                Log.d(TAG, f.getClass().toString()+\" non injected\");\n" +
+                        "                            }\n" +
+                        "                        }\n" +
+                        "                    }, true);\n" +
+                        "        }",
+
+                Constants.ANDROID_INJECTION,
+                Constants.ANDROID_LOG,
+                Constants.FRAGMENT_ACTIVITY,
+                Constants.FRAGMENT_MANAGER,
+                Constants.FRAGMENT,
+                Constants.BUNDLE,
+                Constants.ANDROID_SUPPORT_INJECTION
+        );
+
+        builder.addMethod(methodHandleActivity.build());
 
         final TypeSpec newClass = builder.build();
 
@@ -338,17 +264,10 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
 
         try {
             javaFile.writeTo(System.out);
-            javaFile.writeTo(filer);
+            javaFile.writeTo(mFiler);
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private ClassName findDaggerComponent(TypeMirror typeMirror) {
-        final ClassName typeName = (ClassName) TypeName.get(typeMirror);
-        final String packageName = typeName.packageName();
-        final String className = typeName.simpleName();
-        return ClassName.bestGuess(packageName + "." + Constants.DAGGER + className);
     }
 
     private ClassName findComponent(TypeMirror typeMirror) {
@@ -357,5 +276,4 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
         final String className = typeName.simpleName();
         return ClassName.bestGuess(packageName + "." + className);
     }
-
 }

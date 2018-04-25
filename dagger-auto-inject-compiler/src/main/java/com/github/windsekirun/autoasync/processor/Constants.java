@@ -11,8 +11,11 @@ public class Constants {
     public static final String PACKAGE_NAME = "com.github.windsekirun.daggerautoinject";
     public static final String MAIN_CLASS_NAME = "DaggerAutoInject";
     public static final String ACTIVITY_MODULE = "ActivityModule";
+    public static final String SERVICE_MODULE = "ServiceModule";
     public static final String FRAGMENT_MODULE = "FragmentModule";
     public static final String VIEWHOLDER_MODULE = "ViewModelModule";
+    public static final String BROADCAST_MODULE = "BroadcastReceiverModule";
+    public static final String CONTENT_MODULE = "ContentProviderModule";
 
     public static final String DAGGER = "Dagger";
     public static final String METHOD_INIT = "init";

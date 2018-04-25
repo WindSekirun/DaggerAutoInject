@@ -1,4 +1,4 @@
-package com.github.windsekirun.rxretrojsoup.sample.dagger;
+package com.github.windsekirun.daggerautoinject.sample.dagger;
 
 import android.app.Application;
 import android.content.Context;

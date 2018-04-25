@@ -1,4 +1,4 @@
-package com.github.windsekirun.rxretrojsoup.sample;
+package com.github.windsekirun.daggerautoinject.sample;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;

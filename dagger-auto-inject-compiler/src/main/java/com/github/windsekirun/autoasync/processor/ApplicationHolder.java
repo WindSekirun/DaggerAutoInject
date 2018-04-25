@@ -1,4 +1,4 @@
-package com.github.windsekirun.autoasync.processor.holders;
+package com.github.windsekirun.autoasync.processor;
 
 import com.squareup.javapoet.ClassName;
 

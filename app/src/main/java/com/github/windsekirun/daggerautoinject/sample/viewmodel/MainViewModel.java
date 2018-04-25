@@ -1,4 +1,4 @@
-package com.github.windsekirun.rxretrojsoup.sample.viewmodel;
+package com.github.windsekirun.daggerautoinject.sample.viewmodel;
 
 import android.arch.lifecycle.ViewModel;
 
@@ -13,5 +13,5 @@ import com.github.windsekirun.daggerautoinject.InjectViewModel;
  */
 
 @InjectViewModel
-public class WebViewModel extends ViewModel {
+public class MainViewModel extends ViewModel {
 }
