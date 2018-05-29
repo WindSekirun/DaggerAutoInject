@@ -3,6 +3,7 @@ package com.github.windsekirun.autoasync.processor;
 import com.github.windsekirun.daggerautoinject.InjectActivity;
 import com.github.windsekirun.daggerautoinject.InjectApplication;
 import com.github.windsekirun.daggerautoinject.InjectBroadcastReceiver;
+import com.github.windsekirun.daggerautoinject.InjectClass;
 import com.github.windsekirun.daggerautoinject.InjectContentProvider;
 import com.github.windsekirun.daggerautoinject.InjectFragment;
 import com.github.windsekirun.daggerautoinject.InjectService;
@@ -11,6 +12,7 @@ import com.github.windsekirun.daggerautoinject.ViewModelKey;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -42,9 +44,10 @@ import javax.lang.model.type.TypeMirror;
         "com.github.windsekirun.daggerautoinject.InjectViewModel",
         "com.github.windsekirun.daggerautoinject.InjectService",
         "com.github.windsekirun.daggerautoinject.InjectBroadcastReceiver",
-        "com.github.windsekirun.daggerautoinject.InjectContentProvider"
+        "com.github.windsekirun.daggerautoinject.InjectContentProvider",
+        "com.github.windsekirun.daggerautoinject.InjectClass"
 })
-@SupportedSourceVersion(SourceVersion.RELEASE_7)
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
 @AutoService(javax.annotation.processing.Processor.class)
 public class DaggerAutoInjectProcessor extends AbstractProcessor {
     private Map<ClassName, ContributesHolder> mActivityHolders = new HashMap<>();
@@ -53,6 +56,7 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
     private Map<ClassName, ContributesHolder> mServiceHolders = new HashMap<>();
     private Map<ClassName, ContributesHolder> mBroadcastHolders = new HashMap<>();
     private Map<ClassName, ContributesHolder> mContentHolders = new HashMap<>();
+    private Map<ClassName, ContributesHolder> mClassHolders = new HashMap<>();
 
     private ApplicationHolder mApplicationHolder;
     private Filer mFiler;
@@ -89,6 +93,7 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
         Utils.processHolders(env, InjectBroadcastReceiver.class, mBroadcastHolders);
         Utils.processHolders(env, InjectContentProvider.class, mContentHolders);
         Utils.processHolders(env, InjectViewModel.class, mViewModelHolders);
+        Utils.processHolders(env, InjectClass.class, mClassHolders);
 
         for (Element element : env.getElementsAnnotatedWith(InjectApplication.class)) {
             final ClassName classFullName = ClassName.get((TypeElement) element);
@@ -108,6 +113,7 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
         Utils.constructContributesAndroidInjector(Constants.CONTENT_MODULE, mContentHolders.values(), mFiler);
         constructViewHolderModule();
         construct();
+        constructComponents();
 
         mFragmentHolders.clear();
         mActivityHolders.clear();
@@ -151,6 +157,91 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
         }
     }
 
+    private void constructComponents() {
+        String className = mApplicationHolder.className + "AppComponent";
+        ClassName outerClass = ClassName.get(Constants.PACKAGE_NAME, className);
+        ClassName innerClass = outerClass.nestedClass("Builder");
+
+        // TypeSpec -> MainApplicationAppComponent
+        final TypeSpec.Builder componentBuilder = TypeSpec.interfaceBuilder(className)
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
+
+        // @BindsInterface Builder application(MainApplication application);
+        MethodSpec builderApplicationMethodSpec = MethodSpec.methodBuilder("application")
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addParameter(mApplicationHolder.classNameComplete, Constants.PARAM_APPLICATION)
+                .addAnnotation(ClassName.bestGuess("dagger.BindsInstance"))
+                .returns(innerClass)
+                .build();
+
+        // MainApplicationAppComponent build();
+        MethodSpec builderBuild = MethodSpec.methodBuilder("build")
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .returns(outerClass)
+                .build();
+
+        TypeSpec innerTypeSpec = TypeSpec.interfaceBuilder("Builder")
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .addAnnotation(ClassName.bestGuess("dagger.Component.Builder"))
+                .addMethod(builderApplicationMethodSpec)
+                .addMethod(builderBuild)
+                .build();
+
+        componentBuilder.addType(innerTypeSpec);
+
+        // adding inject method with mClassHolders
+        for (ContributesHolder contributesHolder : mClassHolders.values()) {
+            String parameterName = String.valueOf(contributesHolder.className.charAt(0)).toLowerCase() +
+                    contributesHolder.className.substring(1);
+
+            componentBuilder.addMethod(MethodSpec.methodBuilder("inject")
+                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                    .addParameter(contributesHolder.classNameComplete, parameterName)
+                    .build()
+            );
+        }
+
+        String parameterName = String.valueOf(mApplicationHolder.className.charAt(0)).toLowerCase() +
+                mApplicationHolder.className.substring(1);
+
+        componentBuilder.addMethod(MethodSpec.methodBuilder("inject")
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addParameter(mApplicationHolder.classNameComplete, parameterName)
+                .build());
+
+        // add annotations
+        componentBuilder.addAnnotation(ClassName.bestGuess("javax.inject.Singleton"));
+
+        AnnotationSpec.Builder componentSpecBuilder = AnnotationSpec.builder(ClassName.bestGuess("dagger.Component"));
+
+//        boolean arrayStart = true;
+//        CodeBlock.Builder moduleBuilder = CodeBlock.builder()
+//                .add("{ ");
+//
+//        for (Class<?> target : mApplicationHolder.modules) {
+//            if (!arrayStart) {
+//                moduleBuilder.add(" , ");
+//            }
+//            arrayStart = false;
+//            moduleBuilder.add("$T.class", target.getSimpleName());
+//        }
+//        moduleBuilder.add(" }");
+
+//        componentSpecBuilder.addMember("modules", moduleBuilder.build());
+//
+        componentBuilder.addAnnotation(componentSpecBuilder.build());
+
+        final TypeSpec newClass = componentBuilder.build();
+        final JavaFile javaFile = JavaFile.builder(Constants.PACKAGE_NAME, newClass).build();
+
+        try {
+            javaFile.writeTo(System.out);
+            javaFile.writeTo(mFiler);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void construct() {
         final TypeSpec.Builder builder = TypeSpec.classBuilder(Constants.MAIN_CLASS_NAME)
                 .addModifiers(Modifier.PUBLIC);
@@ -164,7 +255,6 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
                         .build()
         );
 
-        //final ClassName daggerComponent = findDaggerComponent(mApplicationHolder.componentClass);
         final ClassName component = findComponent(mApplicationHolder.componentClass);
 
         final MethodSpec.Builder methodInit = MethodSpec.methodBuilder(Constants.METHOD_INIT)
