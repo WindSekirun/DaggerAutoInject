@@ -1,7 +1,6 @@
 package com.github.windsekirun.daggerautoinject.sample.dagger;
 
 import android.app.Application;
-import android.content.BroadcastReceiver;
 
 import com.github.windsekirun.daggerautoinject.ActivityModule;
 import com.github.windsekirun.daggerautoinject.BroadcastReceiverModule;
@@ -21,6 +20,7 @@ import dagger.android.support.AndroidSupportInjectionModule;
 @Singleton
 @Component(modules = {
         AppModule.class,
+        BaseBindsModule.class,
 
         AndroidInjectionModule.class,
         AndroidSupportInjectionModule.class,

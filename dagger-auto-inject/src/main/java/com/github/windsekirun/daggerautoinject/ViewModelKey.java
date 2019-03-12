@@ -13,5 +13,5 @@ import dagger.MapKey;
 @Retention(RetentionPolicy.RUNTIME)
 @MapKey
 public @interface ViewModelKey {
-    Class<?> value();
+    String value();
 }

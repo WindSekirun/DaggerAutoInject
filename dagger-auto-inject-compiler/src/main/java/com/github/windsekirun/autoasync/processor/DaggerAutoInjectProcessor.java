@@ -128,12 +128,14 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
             String parameterName = String.valueOf(contributesHolder.className.charAt(0)).toLowerCase() +
                     contributesHolder.className.substring(1);
 
+            String canonicalName = getCanonicalName(contributesHolder.classNameComplete);
+
             builder.addMethod(MethodSpec.methodBuilder(Constants.METHOD_BIND + contributesHolder.className)
                     .addAnnotation(Constants.DAGGER_BINDS)
                     .addParameter(typeName, parameterName)
                     .addAnnotation(Constants.DAGGER_INTOMAP)
                     .addAnnotation(AnnotationSpec.builder(ViewModelKey.class)
-                            .addMember("value", contributesHolder.className + ".class").build())
+                            .addMember("value", "$S", canonicalName).build())
                     .addModifiers(Modifier.ABSTRACT)
                     .returns(Constants.VIEWMODEL)
                     .build()
@@ -149,6 +151,13 @@ public class DaggerAutoInjectProcessor extends AbstractProcessor {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private String getCanonicalName(ClassName className) {
+        return className.enclosingClassName() != null
+                ? (getCanonicalName(className.enclosingClassName()) + '.' + className.simpleName())
+                : (className.packageName().isEmpty() ? className.simpleName()
+                : className.packageName() + '.' + className.simpleName());
     }
 
     private void construct() {

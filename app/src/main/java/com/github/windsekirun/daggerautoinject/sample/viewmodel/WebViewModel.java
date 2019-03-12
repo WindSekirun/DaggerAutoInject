@@ -4,6 +4,8 @@ import android.arch.lifecycle.ViewModel;
 
 import com.github.windsekirun.daggerautoinject.InjectViewModel;
 
+import javax.inject.Inject;
+
 /**
  * DaggerAutoInject
  * Class: MainViewModel
@@ -14,4 +16,9 @@ import com.github.windsekirun.daggerautoinject.InjectViewModel;
 
 @InjectViewModel
 public class WebViewModel extends ViewModel {
+
+    @Inject
+    public WebViewModel() {
+
+    }
 }

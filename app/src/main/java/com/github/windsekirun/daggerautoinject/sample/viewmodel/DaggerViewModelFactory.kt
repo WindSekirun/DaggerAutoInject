@@ -7,12 +7,12 @@ import javax.inject.Provider
 import javax.inject.Singleton
 
 @Singleton
-class DaggerViewModelFactory @Inject constructor(private val creators: Map<Class<out ViewModel>,
+class DaggerViewModelFactory @Inject constructor(private val creators: Map<String,
         @JvmSuppressWildcards Provider<ViewModel>>) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        val creator = creators[modelClass] ?:
-                creators.asIterable().firstOrNull { modelClass.isAssignableFrom(it.key) }?.value
+        val creator = creators[modelClass.canonicalName]
+                ?: creators.asIterable().firstOrNull { modelClass.canonicalName == it.key }?.value
                 ?: throw IllegalArgumentException("unknown model class " + modelClass)
 
         return try {
